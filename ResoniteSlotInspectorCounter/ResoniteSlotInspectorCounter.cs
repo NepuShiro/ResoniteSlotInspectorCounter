@@ -1,5 +1,6 @@
 ﻿using Elements.Core;
 using FrooxEngine;
+using FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes;
 using FrooxEngine.UIX;
 using HarmonyLib;
 using ResoniteModLoader;
@@ -20,10 +21,13 @@ namespace ResoniteSlotInspectorCounter
 		[AutoRegisterConfigKey]
 		private static readonly ModConfigurationKey<colorX> CLOSED_COLOR = new("closedColor", "Expanded Color", () => new colorX(1, 0, 1, 1, ColorProfile.Linear));
 
-		[AutoRegisterConfigKey]
+        [AutoRegisterConfigKey]
 		private static readonly ModConfigurationKey<colorX> OPENED_COLOR = new("openedColor", "Collapsed Color", () => new colorX((float)0.6, 0, (float)0.6, 1, ColorProfile.Linear));
 
-		private static ModConfiguration Config;
+        [AutoRegisterConfigKey]
+        private static readonly ModConfigurationKey<colorX> EMPTY_COLOR = new("emptyColor", "Empty Color", () => new colorX(1, 0, 1, 1, ColorProfile.Linear));
+
+        private static ModConfiguration Config;
 
 		public override void OnEngineInit()
 		{
@@ -46,18 +50,28 @@ namespace ResoniteSlotInspectorCounter
 				__instance.ReferenceID.ExtractIDs(out var position, out var user);
                 User userByAllocationID = __instance.World.GetUserByAllocationID(user);
 
-                if (userByAllocationID == __instance.LocalUser) 
+                if (userByAllocationID == __instance.LocalUser)
 				{
                     Slot rootSlot = __instance._rootSlot.Target;
                     if (rootSlot != null)
                     {
                         int totalChildCount = CountChildrenRecursively(rootSlot);
 
+						string closedColor = $"<color={Config.GetValue(CLOSED_COLOR).ToHexString()}>{totalChildCount}</color>";
+						string openedColor = $"<color={Config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
+						string emptyColor = $"<color={Config.GetValue(EMPTY_COLOR).ToHexString()}>{totalChildCount}</color>";
+
                         var text = __instance.Slot.GetComponentInChildren<TextExpandIndicator>();
-                        text.Closed.Value = $"<color={Config.GetValue(CLOSED_COLOR).ToHexString()}>{totalChildCount}</color>";
-                        text.Opened.Value = $"<color={Config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
-                    }
-                }
+                        text.Closed.Value = closedColor;
+						text.Opened.Value = openedColor;
+
+						var empty = text.Slot.GetComponent<ValueObjectInput<string>>();
+						if (empty != null || text.Empty.IsDriven) 
+							empty.Value.Value = emptyColor;
+						else 
+							text.Empty.Value = emptyColor;
+					}
+				}
 			}
 
 			private static int CountChildrenRecursively(Slot slot)
