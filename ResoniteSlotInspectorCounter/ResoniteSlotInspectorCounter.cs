@@ -45,10 +45,7 @@ namespace ResoniteSlotInspectorCounter
 		{
 			public static void Postfix(SlotInspector __instance)
 			{
-				if (!Config.GetValue(ENABLED))
-				{
-					return;
-				}
+				if (!Config.GetValue(ENABLED)) return;
 
 				Slot Inspector = __instance.Slot.GetObjectRoot();
 
@@ -97,38 +94,25 @@ namespace ResoniteSlotInspectorCounter
 											uIBuilder.Style.MinHeight = 24f;
 											uIBuilder.Style.MinWidth = 24f;
 											uIBuilder.Style.FlexibleHeight = 1f;
-											Checkbox DupleCheckbox = uIBuilder.Checkbox(
-												rootSlot.ActiveSelf
-											);
-											Button button =
-												DupleCheckbox.Slot.GetComponent<Button>();
+											
+											Checkbox DupleCheckbox = uIBuilder.Checkbox(rootSlot.ActiveSelf);
+											Button button = DupleCheckbox.Slot.GetComponent<Button>();
 											DupleCheckbox.Slot.Parent.Name = "Button: Active";
 											DupleCheckbox.State.Value = rootSlot.ActiveSelf;
 
-											colorX color2 = MemberEditor.GetFieldColor(
-												rootSlot.ActiveSelf_Field
-											);
+											colorX color2 = MemberEditor.GetFieldColor(rootSlot.ActiveSelf_Field);
 											if (rootSlot.ActiveSelf_Field.IsDriven)
 											{
-												ValueCopy<bool> valcopy =
-													button.Slot.AttachComponent<ValueCopy<bool>>();
-												valcopy.WriteBack.Value = rootSlot
-													.ActiveSelf_Field
-													.IsHooked;
-												valcopy.Source.Value = rootSlot
-													.ActiveSelf_Field
-													.ReferenceID;
-												valcopy.Target.Value = DupleCheckbox
-													.State
-													.ReferenceID;
+												ValueCopy<bool> valcopy = button.Slot.AttachComponent<ValueCopy<bool>>();
+												valcopy.WriteBack.Value = rootSlot.ActiveSelf_Field.IsHooked;
+												valcopy.Source.Value = rootSlot.ActiveSelf_Field.ReferenceID;
+												valcopy.Target.Value = DupleCheckbox.State.ReferenceID;
 
 												button.SetColors(in color2);
 											}
 											else
 											{
-												DupleCheckbox.TargetState.Value = rootSlot
-													.ActiveSelf_Field
-													.ReferenceID;
+												DupleCheckbox.TargetState.Value = rootSlot.ActiveSelf_Field.ReferenceID;
 
 												button.SetColors(in color2);
 											}
