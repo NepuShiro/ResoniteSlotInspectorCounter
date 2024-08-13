@@ -12,23 +12,23 @@ namespace ResoniteSlotInspectorCounter
 	{
 		public override string Name => "ResoniteSlotInspectorCounter";
 		public override string Author => "NepuShiro, xLinka";
-		public override string Version => "1.0.0";
+		public override string Version => "1.2.0";
 		public override string Link => "https://github.com/NepuShiro/ResoniteSlotInspectorCounter";
 
 		[AutoRegisterConfigKey]
 		private static readonly ModConfigurationKey<bool> ENABLED = new("enabled", "Should the mod be enabled", () => true);
 
 		[AutoRegisterConfigKey]
-		private static readonly ModConfigurationKey<bool> BOOL = new("bool", "Should the Active Toggle Button be enabled", () => true);
+		private static readonly ModConfigurationKey<bool> ACTIVE_BOOL = new("bool", "Should the Active Toggle Button be enabled", () => true);
 
 		[AutoRegisterConfigKey]
-		private static readonly ModConfigurationKey<colorX> CLOSED_COLOR = new("closedColor", "Expanded Color", () => new colorX(1, 0, 1, 1, ColorProfile.Linear));
+		private static readonly ModConfigurationKey<colorX> CLOSED_COLOR = new("closedColor", "Expanded Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
 
 		[AutoRegisterConfigKey]
-		private static readonly ModConfigurationKey<colorX> OPENED_COLOR = new("openedColor", "Collapsed Color", () => new colorX(0.6f, 0, 0.6f, 1, ColorProfile.Linear));
+		private static readonly ModConfigurationKey<colorX> OPENED_COLOR = new("openedColor", "Collapsed Color", () => new colorX(0.6f, 0.6f, 0.6f, 1, ColorProfile.Linear));
 
 		[AutoRegisterConfigKey]
-		private static readonly ModConfigurationKey<colorX> EMPTY_COLOR = new("emptyColor", "Empty Color", () => new colorX(1, 0, 1, 1, ColorProfile.Linear));
+		private static readonly ModConfigurationKey<colorX> EMPTY_COLOR = new("emptyColor", "Empty Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
 
 		private static ModConfiguration Config;
 
@@ -43,19 +43,18 @@ namespace ResoniteSlotInspectorCounter
 		[HarmonyPatch(typeof(SlotInspector), "OnChanges")]
 		class SlotInspector_Patch
 		{
-			public static void Postfix(SlotInspector __instance)
+			public static void Postfix(SlotInspector __instance, SyncRef<Slot> ____rootSlot, SyncRef<TextExpandIndicator> ____expanderIndicator)
 			{
-				if (!Config.GetValue(ENABLED)) return;
-
-				Slot Inspector = __instance.Slot.GetObjectRoot();
-
-				__instance.ReferenceID.ExtractIDs(out var position, out var user);
-				User userByAllocationID = __instance.World.GetUserByAllocationID(user);
-
-				if (userByAllocationID == __instance.LocalUser)
+				try 
 				{
-					Slot rootSlot = __instance._rootSlot.Target;
-					Slot instanceSlot = __instance.Slot;
+					if (!Config.GetValue(ENABLED) || __instance == null) return;
+					
+					__instance.ReferenceID.ExtractIDs(out var position, out var user);
+					User userByAllocationID = __instance.World.GetUserByAllocationID(user);
+
+					if (userByAllocationID == null || position < userByAllocationID.AllocationIDStart || userByAllocationID != __instance.LocalUser) return;
+					
+					Slot rootSlot = ____rootSlot.Target;
 					if (rootSlot != null)
 					{
 						int totalChildCount = CountChildrenRecursively(rootSlot);
@@ -64,73 +63,103 @@ namespace ResoniteSlotInspectorCounter
 						string openedColor = $"<color={Config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
 						string emptyColor = $"<color={Config.GetValue(EMPTY_COLOR).ToHexString()}>{totalChildCount}</color>";
 
-						TextExpandIndicator text = instanceSlot.GetComponentInChildren<TextExpandIndicator>();
-						text.Closed.Value = closedColor;
-						text.Opened.Value = openedColor;
+						TextExpandIndicator expanderIndicator = ____expanderIndicator.Target;
+						if (expanderIndicator == null) return;
+						
+						expanderIndicator.Closed.Value = closedColor;
+						expanderIndicator.Opened.Value = openedColor;
 
-						ValueObjectInput<string> empty = text.Slot.GetComponent<ValueObjectInput<string> >();
-						if (empty != null || text.Empty.IsDriven)
+						ValueObjectInput<string> empty = expanderIndicator.Slot.GetComponent<ValueObjectInput<string>>();
+						if (empty != null || expanderIndicator.Empty.IsDriven)
 						{
 							empty.Value.Value = emptyColor;
 						}
 						else
 						{
-							text.Empty.Value = emptyColor;
+							expanderIndicator.Empty.Value = emptyColor;
 						}
 
-						if (Config.GetValue(BOOL))
+						if (Config.GetValue(ACTIVE_BOOL) && __instance.World != null)
 						{
-							try
+							__instance.World.RunInUpdates(5, () =>
 							{
-								__instance.RunInUpdates(5, () =>
+								try
+								{
+									Slot Hori = __instance.Slot.FindChild("Horizontal Layout");
+									if (Hori != null && Hori.FindChild("Button: Active") == null)
 									{
-										Slot Hori = instanceSlot.FindChild("Horizontal Layout");
-										if (Hori.FindChild("Button: Active") == null)
+										var textSlot = Hori.FindChild("Text");
+										if (textSlot == null)
 										{
-											Hori.FindChild("Text").OrderOffset = 1;
+											Msg("Error: Text slot not found");
+											return;
+										}
+										textSlot.OrderOffset = 1;
 
-											UIBuilder uIBuilder = new(Hori);
-											RadiantUI_Constants.SetupEditorStyle(uIBuilder);
-											uIBuilder.Style.MinHeight = 24f;
-											uIBuilder.Style.MinWidth = 24f;
-											uIBuilder.Style.FlexibleHeight = 1f;
-											
-											Checkbox DupleCheckbox = uIBuilder.Checkbox(rootSlot.ActiveSelf);
-											Button button = DupleCheckbox.Slot.GetComponent<Button>();
-											DupleCheckbox.Slot.Parent.Name = "Button: Active";
-											DupleCheckbox.State.Value = rootSlot.ActiveSelf;
+										UIBuilder uIBuilder = new(Hori);
+										RadiantUI_Constants.SetupEditorStyle(uIBuilder);
+										uIBuilder.Style.MinHeight = 24f;
+										uIBuilder.Style.MinWidth = 24f;
+										uIBuilder.Style.FlexibleHeight = 1f;
 
-											colorX color2 = MemberEditor.GetFieldColor(rootSlot.ActiveSelf_Field);
-											if (rootSlot.ActiveSelf_Field.IsDriven)
-											{
-												ValueCopy<bool> valcopy = button.Slot.AttachComponent<ValueCopy<bool>>();
-												valcopy.WriteBack.Value = rootSlot.ActiveSelf_Field.IsHooked;
-												valcopy.Source.Value = rootSlot.ActiveSelf_Field.ReferenceID;
-												valcopy.Target.Value = DupleCheckbox.State.ReferenceID;
+										if (rootSlot == null)
+										{
+											Msg("Error: rootSlot is null");
+											return;
+										}
 
-												button.SetColors(in color2);
-											}
-											else
-											{
-												DupleCheckbox.TargetState.Value = rootSlot.ActiveSelf_Field.ReferenceID;
+										Checkbox DupleCheckbox = uIBuilder.Checkbox(rootSlot.ActiveSelf);
+										if (DupleCheckbox?.Slot == null || DupleCheckbox.State == null)
+										{
+											Msg("Error: DupleCheckbox.Slot or DupleCheckbox.State is null");
+											return;
+										}
 
-												button.SetColors(in color2);
-											}
+										Button button = DupleCheckbox.Slot.GetComponent<Button>();
+										if (button == null)
+										{
+											Msg("Error: Button component is null");
+											return;
+										}
+
+										DupleCheckbox.Slot.Parent.Name = "Button: Active";
+										DupleCheckbox.State.Value = rootSlot.ActiveSelf;
+
+										colorX color2 = MemberEditor.GetFieldColor(rootSlot.ActiveSelf_Field);
+										if (rootSlot.ActiveSelf_Field.IsDriven)
+										{
+											ValueCopy<bool> valcopy = button.Slot.AttachComponent<ValueCopy<bool>>();
+											valcopy.WriteBack.Value = rootSlot.ActiveSelf_Field.IsHooked;
+											valcopy.Source.Target = rootSlot.ActiveSelf_Field;
+											valcopy.Target.Target = DupleCheckbox.State;
+
+											button.SetColors(in color2);
+										}
+										else
+										{
+											DupleCheckbox.TargetState.Target = rootSlot.ActiveSelf_Field;
+											button.SetColors(in color2);
 										}
 									}
-								);
-							}
-							catch (Exception e)
-							{
-								UniLog.Error($"Error while trying to add the Active Checkbox button: {e}");
-							}
+								}
+								catch (Exception e)
+								{
+									Error($"Error in SlotInspector RunInUpdates: {e}");
+								}
+							});
 						}
 					}
+				}
+				catch (Exception e)
+				{
+					Error($"Error in SlotInspector Postfix: {e}");
 				}
 			}
 
 			private static int CountChildrenRecursively(Slot slot)
 			{
+				if (slot == null) return 0;
+				
 				int count = slot.ChildrenCount;
 				foreach (Slot child in slot.Children)
 				{
