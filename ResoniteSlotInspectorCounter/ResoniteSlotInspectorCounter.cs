@@ -57,7 +57,7 @@ namespace ResoniteSlotInspectorCounter
 					Slot rootSlot = ____rootSlot.Target;
 					if (rootSlot != null)
 					{
-						int totalChildCount = CountChildrenRecursively(rootSlot);
+						int totalChildCount = CountSlots(rootSlot);
 
 						string closedColor = $"<color={Config.GetValue(CLOSED_COLOR).ToHexString()}>{totalChildCount}</color>";
 						string openedColor = $"<color={Config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
@@ -109,9 +109,9 @@ namespace ResoniteSlotInspectorCounter
 										}
 
 										Checkbox DupleCheckbox = uIBuilder.Checkbox(rootSlot.ActiveSelf);
-										if (DupleCheckbox?.Slot == null || DupleCheckbox.State == null)
+										if (DupleCheckbox == null || DupleCheckbox.Slot == null || DupleCheckbox.State == null)
 										{
-											Msg("Error: DupleCheckbox.Slot or DupleCheckbox.State is null");
+											Msg("Error: DupleCheckbox or DupleCheckbox.Slot or DupleCheckbox.State is null");
 											return;
 										}
 
@@ -155,18 +155,17 @@ namespace ResoniteSlotInspectorCounter
 					Error($"Error in SlotInspector Postfix: {e}");
 				}
 			}
+		}
+		
+		internal static int CountSlots(Slot slot)
+		{
+			if (slot == null) return 0;
 
-			private static int CountChildrenRecursively(Slot slot)
-			{
-				if (slot == null) return 0;
-				
-				int count = slot.ChildrenCount;
-				foreach (Slot child in slot.Children)
-				{
-					count += CountChildrenRecursively(child);
-				}
-				return count;
-			}
+			int slotCount = 0;
+			
+			slot.ForeachChild((child) => slotCount++);
+
+			return slotCount;
 		}
 	}
 }
