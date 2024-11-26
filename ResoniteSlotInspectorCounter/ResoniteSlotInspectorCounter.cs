@@ -12,7 +12,7 @@ namespace ResoniteSlotInspectorCounter
 	{
 		public override string Name => "ResoniteSlotInspectorCounter";
 		public override string Author => "NepuShiro, xLinka";
-		public override string Version => "1.2.0";
+		public override string Version => "1.3.0";
 		public override string Link => "https://github.com/NepuShiro/ResoniteSlotInspectorCounter";
 
 		[AutoRegisterConfigKey]
@@ -36,7 +36,7 @@ namespace ResoniteSlotInspectorCounter
 		{
 			Config = GetConfiguration();
 			Config.Save(true);
-			Harmony harmony = new("net.nepushiro.ResoniteSlotInspectorCounter");
+			Harmony harmony = new("net.NepuShiro.ResoniteSlotInspectorCounter");
 			harmony.PatchAll();
 		}
 
