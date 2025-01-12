@@ -20,12 +20,12 @@ namespace ResoniteSlotInspectorCounter
         private static readonly ModConfigurationKey<bool> ENABLED = new("Enabled", "Should the mod be enabled", () => true);
 
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> ACTIVE_BOOL = new("Active Checkbox", "Should the Active Toggle Button be enabled", () => true);
+        private static readonly ModConfigurationKey<bool> ACTIVE_BOOL = new("bool", "Should the Active Toggle Button be enabled", () => true);
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> DYNVARS = new("Create DynVars", "Create DynVars for the Inspector Root Slot Count?", () => true);
+        private static readonly ModConfigurationKey<bool> DYNVARS = new("dynvars", "Create DynVars for the Inspector Root Slot Count?", () => true);
 
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<dummy> DUMMY0 = new("");
+        private static readonly ModConfigurationKey<dummy> DUMMY0 = new("", "-- Non Lerped Colors --");
 
         [AutoRegisterConfigKey]
         private static readonly ModConfigurationKey<colorX> CLOSED_COLOR = new("closedColor", "Collapsed Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
@@ -36,20 +36,20 @@ namespace ResoniteSlotInspectorCounter
 
 
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<dummy> DUMMY1 = new("");
+        private static readonly ModConfigurationKey<dummy> DUMMY1 = new("", "-- Lerped Color --");
 
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> LERP_COLOR = new("Lerp Color", "Should the SlotCount color be lerped instead?", () => false);
+        private static readonly ModConfigurationKey<bool> LERP_COLOR = new("colorLerp", "Should the SlotCount color be lerped instead?", () => false);
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> LERP_COLOR_ROOTSLOT = new("RootSlot Max", "Use the RootSlot's Slot count as the max?", () => false);
+        private static readonly ModConfigurationKey<bool> LERP_COLOR_ROOTSLOT = new("useRootSlot", "Use the RootSlot's Slot count as the max?", () => false);
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> LERP_COLOR_INSPECTROOTSLOT = new("Inspected Slot Max", "Use the Inspected Slot's Slot count as the max?", () => false);
+        private static readonly ModConfigurationKey<bool> LERP_COLOR_INSPECTROOTSLOT = new("useInspectedSlot", "Use the Inspected Slot's Slot count as the max?", () => false);
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<int> LERP_COLOR_MAX = new("Max SlotCount", "The amount of slots for the Color to be the Max Lerp Color", () => 10000);
+        private static readonly ModConfigurationKey<int> LERP_COLOR_MAX = new("maxSlotCount", "The amount of slots for the Color to be the Max Lerp Color", () => 10000);
 
 
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<dummy> DUMMY2 = new("");
+        private static readonly ModConfigurationKey<dummy> DUMMY2 = new("", "-- Lerped Colors --");
 
         [AutoRegisterConfigKey]
         private static readonly ModConfigurationKey<colorX> LERP_MIN_COLOR = new("Min Lerp Color", "Min Lerp Color", () => new colorX(0.0f, 1.0f, 0.0f, 1.0f, ColorProfile.Linear));
