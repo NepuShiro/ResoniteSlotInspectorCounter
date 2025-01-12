@@ -25,7 +25,7 @@ namespace ResoniteSlotInspectorCounter
         private static readonly ModConfigurationKey<bool> DYNVARS = new("dynvars", "Create DynVars for the Inspector Root Slot Count?", () => true);
 
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<dummy> DUMMY0 = new("", "-- Non Lerped Colors --");
+        private static readonly ModConfigurationKey<dummy> DUMMY0 = new("-- Non Lerped Colors --", "-- Non Lerped Colors --");
 
         [AutoRegisterConfigKey]
         private static readonly ModConfigurationKey<colorX> CLOSED_COLOR = new("closedColor", "Collapsed Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
@@ -36,7 +36,7 @@ namespace ResoniteSlotInspectorCounter
 
 
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<dummy> DUMMY1 = new("", "-- Lerped Color --");
+        private static readonly ModConfigurationKey<dummy> DUMMY1 = new("-- Lerped Color --", "-- Lerped Color --");
 
         [AutoRegisterConfigKey]
         private static readonly ModConfigurationKey<bool> LERP_COLOR = new("colorLerp", "Should the SlotCount color be lerped instead?", () => false);
@@ -49,7 +49,7 @@ namespace ResoniteSlotInspectorCounter
 
 
         [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<dummy> DUMMY2 = new("", "-- Lerped Colors --");
+        private static readonly ModConfigurationKey<dummy> DUMMY2 = new("-- Lerped Colors --", "-- Lerped Colors --");
 
         [AutoRegisterConfigKey]
         private static readonly ModConfigurationKey<colorX> LERP_MIN_COLOR = new("Min Lerp Color", "Min Lerp Color", () => new colorX(0.0f, 1.0f, 0.0f, 1.0f, ColorProfile.Linear));
