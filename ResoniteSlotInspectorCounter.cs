@@ -5,6 +5,7 @@ using FrooxEngine;
 using FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes;
 using FrooxEngine.UIX;
 using HarmonyLib;
+using Renderite.Shared;
 using ResoniteModLoader;
 
 namespace ResoniteSlotInspectorCounter
@@ -13,98 +14,79 @@ namespace ResoniteSlotInspectorCounter
     {
         public override string Name => "ResoniteSlotInspectorCounter";
         public override string Author => "NepuShiro, xLinka";
-        public override string Version => "1.5.0";
+        public override string Version => "1.7.0";
         public override string Link => "https://github.com/NepuShiro/ResoniteSlotInspectorCounter";
 
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> ENABLED = new("Enabled", "Should the mod be enabled", () => true);
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Should the mod be enabled", () => true);
 
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> ACTIVE_BOOL = new("bool", "Should the Active Toggle Button be enabled", () => true);
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> DYNVARS = new("dynvars", "Create DynVars for the Inspector Root Slot Count?", () => true);
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ACTIVE_BOOL = new ModConfigurationKey<bool>("bool", "Should the Active Toggle Button be enabled", () => true);
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> DYNVARS = new ModConfigurationKey<bool>("dynvars", "Create DynVars for the Inspector Root Slot Count?", () => true);
 
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<dummy> DUMMY0 = new("-- Non Lerped Colors --", "-- Non Lerped Colors --");
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<dummy> DUMMY0 = new ModConfigurationKey<dummy>("-- Non Lerped Colors --", "-- Non Lerped Colors --");
 
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<colorX> CLOSED_COLOR = new("closedColor", "Collapsed Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<colorX> OPENED_COLOR = new("openedColor", "Expanded Color", () => new colorX(0.6f, 0.6f, 0.6f, 1, ColorProfile.Linear));
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<colorX> EMPTY_COLOR = new("emptyColor", "Empty Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> CLOSED_COLOR = new ModConfigurationKey<colorX>("closedColor", "Collapsed Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> OPENED_COLOR = new ModConfigurationKey<colorX>("openedColor", "Expanded Color", () => new colorX(0.6f, 0.6f, 0.6f, 1, ColorProfile.Linear));
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> EMPTY_COLOR = new ModConfigurationKey<colorX>("emptyColor", "Empty Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
+        
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<dummy> DUMMY1 = new ModConfigurationKey<dummy>("-- Lerped Color --", "-- Lerped Color --");
 
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> LERP_COLOR = new ModConfigurationKey<bool>("colorLerp", "Should the SlotCount color be lerped instead?", () => false);
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> LERP_COLOR_ROOTSLOT = new ModConfigurationKey<bool>("useRootSlot", "Use the RootSlot's Slot count as the max?", () => false);
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> LERP_COLOR_INSPECTROOTSLOT = new ModConfigurationKey<bool>("useInspectedSlot", "Use the Inspected Slot's Slot count as the max?", () => false);
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<int> LERP_COLOR_MAX = new ModConfigurationKey<int>("maxSlotCount", "The amount of slots for the Color to be the Max Lerp Color", () => 10000);
+        
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<dummy> DUMMY2 = new ModConfigurationKey<dummy>("-- Lerped Colors --", "-- Lerped Colors --");
 
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<dummy> DUMMY1 = new("-- Lerped Color --", "-- Lerped Color --");
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> LERP_MIN_COLOR = new ModConfigurationKey<colorX>("Min Lerp Color", "Min Lerp Color", () => new colorX(0.0f, 1.0f, 0.0f, 1.0f, ColorProfile.Linear));
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> LERP_MID_COLOR = new ModConfigurationKey<colorX>("Mid Lerp Color", "Mid Lerp Color", () => new colorX(1.0f, 1.0f, 0.0f, 1.0f, ColorProfile.Linear));
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> LERP_MAX_COLOR = new ModConfigurationKey<colorX>("Max Lerp Color", "Max Lerp Color", () => new colorX(1.0f, 0.0f, 0.0f, 1.0f, ColorProfile.Linear));
 
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> LERP_COLOR = new("colorLerp", "Should the SlotCount color be lerped instead?", () => false);
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> LERP_COLOR_ROOTSLOT = new("useRootSlot", "Use the RootSlot's Slot count as the max?", () => false);
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<bool> LERP_COLOR_INSPECTROOTSLOT = new("useInspectedSlot", "Use the Inspected Slot's Slot count as the max?", () => false);
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<int> LERP_COLOR_MAX = new("maxSlotCount", "The amount of slots for the Color to be the Max Lerp Color", () => 10000);
-
-
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<dummy> DUMMY2 = new("-- Lerped Colors --", "-- Lerped Colors --");
-
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<colorX> LERP_MIN_COLOR = new("Min Lerp Color", "Min Lerp Color", () => new colorX(0.0f, 1.0f, 0.0f, 1.0f, ColorProfile.Linear));
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<colorX> LERP_MID_COLOR = new("Mid Lerp Color", "Mid Lerp Color", () => new colorX(1.0f, 1.0f, 0.0f, 1.0f, ColorProfile.Linear));
-        [AutoRegisterConfigKey]
-        private static readonly ModConfigurationKey<colorX> LERP_MAX_COLOR = new("Max Lerp Color", "Max Lerp Color", () => new colorX(1.0f, 0.0f, 0.0f, 1.0f, ColorProfile.Linear));
-
-        private static ModConfiguration Config;
+        private static ModConfiguration _config;
 
         public override void OnEngineInit()
         {
-            Config = GetConfiguration();
-            Config.Save(true);
+            _config = GetConfiguration();
+            _config!.Save(true);
 
-            Harmony harmony = new("net.NepuShiro.ResoniteSlotInspectorCounter");
+            Harmony harmony = new Harmony("net.NepuShiro.ResoniteSlotInspectorCounter");
             harmony.PatchAll();
         }
 
         [HarmonyPatch(typeof(SlotInspector), "OnChanges")]
-        class SlotInspector_Patch
+        private class SlotInspector_Patch
         {
             public static void Postfix(SlotInspector __instance, SyncRef<Slot> ____rootSlot, SyncRef<TextExpandIndicator> ____expanderIndicator)
             {
                 try
                 {
-                    if (!Config.GetValue(ENABLED) || __instance == null) return;
+                    if (!_config.GetValue(ENABLED) || __instance == null) return;
 
                     SceneInspector inspector = __instance.Slot.GetComponentInParents<SceneInspector>();
                     if (inspector == null) return;
 
-                    inspector.Slot.ReferenceID.ExtractIDs(out ulong position, out byte userByte);
-                    User userByAllocationID = inspector.Slot.World.GetUserByAllocationID(userByte);
-                    if (userByAllocationID == null || position < userByAllocationID.AllocationIDStart || userByAllocationID != inspector.Slot.LocalUser) return;
+                    User userByAllocationID = inspector.Slot.World.GetUserByAllocationID(inspector.Slot.ReferenceID.User);
+                    if (userByAllocationID == null || userByAllocationID != inspector.Slot.LocalUser) return;
 
                     Slot rootSlot = ____rootSlot.Target;
                     if (rootSlot == null) return;
 
                     int totalChildCount = CountSlots(rootSlot);
 
-                    string closedColor = $"<color={Config.GetValue(CLOSED_COLOR).ToHexString()}>{totalChildCount}</color>";
-                    string openedColor = $"<color={Config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
-                    string emptyColor = $"<color={Config.GetValue(EMPTY_COLOR).ToHexString()}>{totalChildCount}</color>";
-                    
+                    string closedColor = $"<color={_config.GetValue(CLOSED_COLOR).ToHexString()}>{totalChildCount}</color>";
+                    string openedColor = $"<color={_config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
+                    string emptyColor = $"<color={_config.GetValue(EMPTY_COLOR).ToHexString()}>{totalChildCount}</color>";
+
                     Slot inspectorRoot = inspector.Root.Target;
-                    if (Config.GetValue(LERP_COLOR))
+                    if (_config.GetValue(LERP_COLOR))
                     {
-                        colorX baseColor = GetColorBasedOnSlotCount(totalChildCount, Config.GetValue(LERP_COLOR_INSPECTROOTSLOT) ? CountSlots(inspectorRoot) : Config.GetValue(LERP_COLOR_ROOTSLOT) ? CountSlots(__instance.World.RootSlot) : Config.GetValue(LERP_COLOR_MAX));
+                        colorX baseColor = GetColorBasedOnSlotCount(totalChildCount, _config.GetValue(LERP_COLOR_INSPECTROOTSLOT) ? CountSlots(inspectorRoot) : _config.GetValue(LERP_COLOR_ROOTSLOT) ? CountSlots(__instance.World.RootSlot) : _config.GetValue(LERP_COLOR_MAX));
 
                         closedColor = $"<color={baseColor.ToHexString()}>{totalChildCount}</color>";
                         openedColor = $"<color={baseColor.MulValue(0.7f).ToHexString()}>{totalChildCount}</color>";
                         emptyColor = $"<color={baseColor.MulValue(0.85f).ToHexString()}>{totalChildCount}</color>";
                     }
 
-                    if (Config.GetValue(DYNVARS))
+                    if (_config.GetValue(DYNVARS))
                     {
                         DynamicVariableSpace dynVarSpace = inspector.Slot.GetComponentOrAttach<DynamicVariableSpace>();
                         string dynVarSpaceName = dynVarSpace.SpaceName.Value;
@@ -118,9 +100,9 @@ namespace ResoniteSlotInspectorCounter
                         {
                             __instance.Slot.RunInUpdates(2, () =>
                             {
-                                var slotvars = inspector.Slot.FindChildOrAdd("Slot Count Vars", false);
+                                Slot slotvars = inspector.Slot.FindChildOrAdd("Slot Count Vars", false);
 
-                                var dynVarString = slotvars.GetComponentOrAttach<DynamicValueVariable<string>>();
+                                DynamicValueVariable<string> dynVarString = slotvars.GetComponentOrAttach<DynamicValueVariable<string>>();
                                 string dynVarStringName = $"{dynVarSpaceName}/SlotCountString";
                                 if (string.IsNullOrEmpty(dynVarString.VariableName.Value))
                                 {
@@ -129,7 +111,7 @@ namespace ResoniteSlotInspectorCounter
                                     dynVarString.Value.Value = openedColor;
                                 }
 
-                                var dynVarInt = slotvars.GetComponentOrAttach<DynamicValueVariable<int>>();
+                                DynamicValueVariable<int> dynVarInt = slotvars.GetComponentOrAttach<DynamicValueVariable<int>>();
                                 string dynVarIntName = $"{dynVarSpaceName}/SlotCountInt";
                                 if (string.IsNullOrEmpty(dynVarInt.VariableName.Value))
                                 {
@@ -151,7 +133,7 @@ namespace ResoniteSlotInspectorCounter
                     expanderIndicator.Opened.Value = openedColor;
 
                     ValueObjectInput<string> empty = expanderIndicator.Slot.GetComponent<ValueObjectInput<string>>();
-                    if (empty != null || expanderIndicator.Empty.IsDriven)
+                    if (empty != null || expanderIndicator.Empty.IsLinked)
                     {
                         empty.Value.Value = emptyColor;
                     }
@@ -160,44 +142,31 @@ namespace ResoniteSlotInspectorCounter
                         expanderIndicator.Empty.Value = emptyColor;
                     }
 
-                    if (Config.GetValue(ACTIVE_BOOL) && __instance.World != null)
+                    if (!_config.GetValue(ACTIVE_BOOL)) return;
+
+                    Slot hori = __instance.Slot.FindChild("Horizontal Layout");
+                    if (hori == null || hori.GetComponent<BooleanMemberEditor>() != null) return;
+
+                    Slot textSlot = hori.FindChild("Text");
+                    if (textSlot == null)
                     {
-                        __instance.World.RunSynchronously(() =>
-                        {
-                            try
-                            {
-                                Slot Hori = __instance.Slot.FindChild("Horizontal Layout");
-                                if (Hori != null && Hori.GetComponent<BooleanMemberEditor>() == null)
-                                {
-                                    var textSlot = Hori.FindChild("Text");
-                                    if (textSlot == null)
-                                    {
-                                        Warn("Text slot not found");
-                                        return;
-                                    }
-                                    textSlot.OrderOffset = 1;
-
-                                    UIBuilder uIBuilder = new UIBuilder(Hori);
-                                    RadiantUI_Constants.SetupEditorStyle(uIBuilder);
-                                    uIBuilder.Style.MinHeight = 24f;
-                                    uIBuilder.Style.MinWidth = 24f;
-                                    uIBuilder.Style.FlexibleHeight = 1f;
-
-                                    if (rootSlot == null)
-                                    {
-                                        Warn("rootSlot is null");
-                                        return;
-                                    }
-
-                                    uIBuilder.BooleanMemberEditor(rootSlot.ActiveSelf_Field);
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                Error($"Error in SlotInspector RunSynchronously: {e}");
-                            }
-                        });
+                        Warn("Text slot not found");
+                        return;
                     }
+                    textSlot.OrderOffset = 1;
+
+                    UIBuilder uIBuilder = new UIBuilder(hori);
+                    RadiantUI_Constants.SetupEditorStyle(uIBuilder);
+                    uIBuilder.Style.MinHeight = 24f;
+                    uIBuilder.Style.MinWidth = 24f;
+                    uIBuilder.Style.FlexibleHeight = 1f;
+
+                    if (rootSlot == null)
+                    {
+                        Warn("rootSlot is null");
+                        return;
+                    }
+                    uIBuilder.BooleanMemberEditor(rootSlot.ActiveSelf_Field);
                 }
                 catch (Exception e)
                 {
@@ -206,18 +175,18 @@ namespace ResoniteSlotInspectorCounter
             }
         }
 
-        internal static int CountSlots(Slot slot)
+        private static int CountSlots(Slot slot)
         {
             if (slot == null) return 0;
 
             int slotCount = 0;
 
-            slot.ForeachChild((child) => slotCount++);
+            slot.ForeachChild(_ => slotCount++);
 
             return slotCount;
         }
 
-        internal static colorX Lerp(colorX a, colorX b, float t, ColorProfile colorProfile)
+        private static colorX Lerp(colorX a, colorX b, float t, ColorProfile colorProfile)
         {
             // t = t * t * (3 - 2 * t);
             return new colorX(
@@ -229,32 +198,28 @@ namespace ResoniteSlotInspectorCounter
             );
         }
 
-        internal static colorX GetColorBasedOnSlotCount(int slotCount, int maxSlotCount)
+        private static colorX GetColorBasedOnSlotCount(int slotCount, int maxSlotCount)
         {
-            colorX green = Config.GetValue(LERP_MIN_COLOR);
-            colorX yellow = Config.GetValue(LERP_MID_COLOR);
-            colorX red = Config.GetValue(LERP_MAX_COLOR);
+            colorX green = _config.GetValue(LERP_MIN_COLOR);
+            colorX yellow = _config.GetValue(LERP_MID_COLOR);
+            colorX red = _config.GetValue(LERP_MAX_COLOR);
             ColorProfile profile = GetMostCommonProfile(green.Profile, yellow.Profile, red.Profile);
 
             float t = (float)slotCount / maxSlotCount;
 
-            if (t <= 0.5f)
-            {
-                return Lerp(green, yellow, t * 2, profile);
-            }
-            else
-            {
-                return Lerp(yellow, red, (t - 0.5f) * 2, profile);
-            }
+            return t <= 0.5f
+                ? Lerp(green, yellow, t * 2, profile)
+                : Lerp(yellow, red, (t - 0.5f) * 2, profile);
         }
 
         private static ColorProfile GetMostCommonProfile(ColorProfile a, ColorProfile b, ColorProfile c)
         {
-            var profiles = new[] { a, b, c };
+            ColorProfile[] profiles = { a, b, c };
+            
             return profiles.GroupBy(p => p)
-                           .OrderByDescending(g => g.Count())
-                           .First()
-                           .Key;
+                .OrderByDescending(g => g.Count())
+                .First()
+                .Key;
         }
     }
 }
