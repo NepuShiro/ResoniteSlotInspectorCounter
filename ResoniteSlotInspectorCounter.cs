@@ -6,6 +6,7 @@ using FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes;
 using FrooxEngine.UIX;
 using HarmonyLib;
 using ResoniteModLoader;
+using Renderite.Shared;
 
 namespace ResoniteSlotInspectorCounter
 {
