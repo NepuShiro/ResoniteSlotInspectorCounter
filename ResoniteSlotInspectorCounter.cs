@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes;
@@ -17,7 +14,7 @@ namespace ResoniteSlotInspectorCounter
     {
         public override string Name => "ResoniteSlotInspectorCounter";
         public override string Author => "NepuShiro, xLinka";
-        public override string Version => "1.7.0";
+        public override string Version => "1.8.0";
         public override string Link => "https://github.com/NepuShiro/ResoniteSlotInspectorCounter";
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Should the mod be enabled", () => true);
