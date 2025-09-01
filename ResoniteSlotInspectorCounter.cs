@@ -21,8 +21,7 @@ namespace ResoniteSlotInspectorCounter
         public override string Link => "https://github.com/NepuShiro/ResoniteSlotInspectorCounter";
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Should the mod be enabled", () => true);
-
-        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ACTIVE_BOOL = new ModConfigurationKey<bool>("bool", "Should the Active Toggle Button be enabled", () => true);
+        
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> DYNVARS = new ModConfigurationKey<bool>("dynvars", "Create DynVars for the Inspector Root Slot Count?", () => true);
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<dummy> DUMMY0 = new ModConfigurationKey<dummy>("-- Non Lerped Colors --", "-- Non Lerped Colors --");
@@ -149,38 +148,6 @@ namespace ResoniteSlotInspectorCounter
                 {
                     Error($"Error in SlotInspector Postfix: {e}");
                 }
-            }
-
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-            {
-                FieldInfo rootSlot = AccessTools.Field(typeof(SlotInspector), "_rootSlot");
-                MethodInfo booleanEditor = AccessTools.Method(typeof(UIBuilderEditors), nameof(UIBuilderEditors.BooleanMemberEditor), new Type[] { typeof(UIBuilder), typeof(IField), typeof(string) });
-                MethodInfo customMethod = AccessTools.Method(typeof(SlotInspector_Patch), nameof(SlotInspector_Patch.BooleanMemberEditorChanger));
-
-                CodeMatcher matcher = new CodeMatcher(instructions, generator);
-                matcher.MatchStartForward(new CodeMatch(OpCodes.Ldloc_0), new CodeMatch(OpCodes.Ldarg_0), new CodeMatch(OpCodes.Ldfld, rootSlot) );
-
-                int start = matcher.Pos;
-
-                matcher.MatchEndForward(new CodeMatch(OpCodes.Call, booleanEditor), new CodeMatch(OpCodes.Pop));
-
-                int end = matcher.Pos + 1;
-
-                matcher.Start().Advance(start).RemoveInstructions(end - start).Insert(new CodeInstruction(OpCodes.Ldloc_0), new CodeInstruction(OpCodes.Ldarg_0), new CodeInstruction(OpCodes.Call, customMethod));
-
-                return matcher.InstructionEnumeration();
-            }
-        
-            public static void BooleanMemberEditorChanger(UIBuilder uIBuilder, SlotInspector inspector)
-            {
-                if (!ACTIVE_BOOL.Value) return;
-                if (inspector.GetSyncMember("_rootSlot") is not SyncRef<Slot> rootSlot) return;
-                
-                uIBuilder.Style.MinHeight = 24f;
-                uIBuilder.Style.MinWidth = 24f;
-                uIBuilder.Style.FlexibleHeight = 1f;
-                uIBuilder.BooleanMemberEditor(rootSlot.Target.ActiveSelf_Field);
-                uIBuilder.Style.FlexibleWidth = 100f;
             }
         }
 
