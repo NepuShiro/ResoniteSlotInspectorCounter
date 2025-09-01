@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.ProtoFlux.Runtimes.Execution.Nodes;
@@ -27,14 +30,14 @@ namespace ResoniteSlotInspectorCounter
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> CLOSED_COLOR = new ModConfigurationKey<colorX>("closedColor", "Collapsed Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> OPENED_COLOR = new ModConfigurationKey<colorX>("openedColor", "Expanded Color", () => new colorX(0.6f, 0.6f, 0.6f, 1, ColorProfile.Linear));
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> EMPTY_COLOR = new ModConfigurationKey<colorX>("emptyColor", "Empty Color", () => new colorX(1, 1, 1, 1, ColorProfile.Linear));
-        
+
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<dummy> DUMMY1 = new ModConfigurationKey<dummy>("-- Lerped Color --", "-- Lerped Color --");
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> LERP_COLOR = new ModConfigurationKey<bool>("colorLerp", "Should the SlotCount color be lerped instead?", () => false);
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> LERP_COLOR_ROOTSLOT = new ModConfigurationKey<bool>("useRootSlot", "Use the RootSlot's Slot count as the max?", () => false);
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> LERP_COLOR_INSPECTROOTSLOT = new ModConfigurationKey<bool>("useInspectedSlot", "Use the Inspected Slot's Slot count as the max?", () => false);
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<int> LERP_COLOR_MAX = new ModConfigurationKey<int>("maxSlotCount", "The amount of slots for the Color to be the Max Lerp Color", () => 10000);
-        
+
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<dummy> DUMMY2 = new ModConfigurationKey<dummy>("-- Lerped Colors --", "-- Lerped Colors --");
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<colorX> LERP_MIN_COLOR = new ModConfigurationKey<colorX>("Min Lerp Color", "Min Lerp Color", () => new colorX(0.0f, 1.0f, 0.0f, 1.0f, ColorProfile.Linear));
@@ -59,7 +62,7 @@ namespace ResoniteSlotInspectorCounter
             {
                 try
                 {
-                    if (!_config.GetValue(ENABLED) || __instance == null) return;
+                    if (!ENABLED.Value || __instance == null) return;
 
                     SceneInspector inspector = __instance.Slot.GetComponentInParents<SceneInspector>();
                     if (inspector == null) return;
@@ -72,21 +75,21 @@ namespace ResoniteSlotInspectorCounter
 
                     int totalChildCount = CountSlots(rootSlot);
 
-                    string closedColor = $"<color={_config.GetValue(CLOSED_COLOR).ToHexString()}>{totalChildCount}</color>";
-                    string openedColor = $"<color={_config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
-                    string emptyColor = $"<color={_config.GetValue(EMPTY_COLOR).ToHexString()}>{totalChildCount}</color>";
+                    string closedColor = $"<color={CLOSED_COLOR.Value.ToHexString()}>{totalChildCount}</color>";
+                    string openedColor = $"<color={OPENED_COLOR.Value.ToHexString()}>{totalChildCount}</color>";
+                    string emptyColor = $"<color={EMPTY_COLOR.Value.ToHexString()}>{totalChildCount}</color>";
 
                     Slot inspectorRoot = inspector.Root.Target;
-                    if (_config.GetValue(LERP_COLOR))
+                    if (LERP_COLOR.Value)
                     {
-                        colorX baseColor = GetColorBasedOnSlotCount(totalChildCount, _config.GetValue(LERP_COLOR_INSPECTROOTSLOT) ? CountSlots(inspectorRoot) : _config.GetValue(LERP_COLOR_ROOTSLOT) ? CountSlots(__instance.World.RootSlot) : _config.GetValue(LERP_COLOR_MAX));
+                        colorX baseColor = GetColorBasedOnSlotCount(totalChildCount, LERP_COLOR_INSPECTROOTSLOT.Value ? CountSlots(inspectorRoot) : LERP_COLOR_ROOTSLOT.Value ? CountSlots(__instance.World.RootSlot) : LERP_COLOR_MAX.Value);
 
                         closedColor = $"<color={baseColor.ToHexString()}>{totalChildCount}</color>";
                         openedColor = $"<color={baseColor.MulValue(0.7f).ToHexString()}>{totalChildCount}</color>";
                         emptyColor = $"<color={baseColor.MulValue(0.85f).ToHexString()}>{totalChildCount}</color>";
                     }
 
-                    if (_config.GetValue(DYNVARS))
+                    if (DYNVARS.Value)
                     {
                         DynamicVariableSpace dynVarSpace = inspector.Slot.GetComponentOrAttach<DynamicVariableSpace>();
                         string dynVarSpaceName = dynVarSpace.SpaceName.Value;
@@ -141,37 +144,43 @@ namespace ResoniteSlotInspectorCounter
                     {
                         expanderIndicator.Empty.Value = emptyColor;
                     }
-
-                    if (!_config.GetValue(ACTIVE_BOOL)) return;
-
-                    Slot hori = __instance.Slot.FindChild("Horizontal Layout");
-                    if (hori == null || hori.GetComponent<BooleanMemberEditor>() != null) return;
-
-                    Slot textSlot = hori.FindChild("Text");
-                    if (textSlot == null)
-                    {
-                        Warn("Text slot not found");
-                        return;
-                    }
-                    textSlot.OrderOffset = 1;
-
-                    UIBuilder uIBuilder = new UIBuilder(hori);
-                    RadiantUI_Constants.SetupEditorStyle(uIBuilder);
-                    uIBuilder.Style.MinHeight = 24f;
-                    uIBuilder.Style.MinWidth = 24f;
-                    uIBuilder.Style.FlexibleHeight = 1f;
-
-                    if (rootSlot == null)
-                    {
-                        Warn("rootSlot is null");
-                        return;
-                    }
-                    uIBuilder.BooleanMemberEditor(rootSlot.ActiveSelf_Field);
                 }
                 catch (Exception e)
                 {
                     Error($"Error in SlotInspector Postfix: {e}");
                 }
+            }
+
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
+            {
+                FieldInfo rootSlot = AccessTools.Field(typeof(SlotInspector), "_rootSlot");
+                MethodInfo booleanEditor = AccessTools.Method(typeof(UIBuilderEditors), nameof(UIBuilderEditors.BooleanMemberEditor), new Type[] { typeof(UIBuilder), typeof(IField), typeof(string) });
+                MethodInfo customMethod = AccessTools.Method(typeof(SlotInspector_Patch), nameof(SlotInspector_Patch.BooleanMemberEditorChanger));
+
+                CodeMatcher matcher = new CodeMatcher(instructions, generator);
+                matcher.MatchStartForward(new CodeMatch(OpCodes.Ldloc_0), new CodeMatch(OpCodes.Ldarg_0), new CodeMatch(OpCodes.Ldfld, rootSlot) );
+
+                int start = matcher.Pos;
+
+                matcher.MatchEndForward(new CodeMatch(OpCodes.Call, booleanEditor), new CodeMatch(OpCodes.Pop));
+
+                int end = matcher.Pos + 1;
+
+                matcher.Start().Advance(start).RemoveInstructions(end - start).Insert(new CodeInstruction(OpCodes.Ldloc_0), new CodeInstruction(OpCodes.Ldarg_0), new CodeInstruction(OpCodes.Call, customMethod));
+
+                return matcher.InstructionEnumeration();
+            }
+        
+            public static void BooleanMemberEditorChanger(UIBuilder uIBuilder, SlotInspector inspector)
+            {
+                if (!ACTIVE_BOOL.Value) return;
+                if (inspector.GetSyncMember("_rootSlot") is not SyncRef<Slot> rootSlot) return;
+                
+                uIBuilder.Style.MinHeight = 24f;
+                uIBuilder.Style.MinWidth = 24f;
+                uIBuilder.Style.FlexibleHeight = 1f;
+                uIBuilder.BooleanMemberEditor(rootSlot.Target.ActiveSelf_Field);
+                uIBuilder.Style.FlexibleWidth = 100f;
             }
         }
 
@@ -200,26 +209,26 @@ namespace ResoniteSlotInspectorCounter
 
         private static colorX GetColorBasedOnSlotCount(int slotCount, int maxSlotCount)
         {
-            colorX green = _config.GetValue(LERP_MIN_COLOR);
-            colorX yellow = _config.GetValue(LERP_MID_COLOR);
-            colorX red = _config.GetValue(LERP_MAX_COLOR);
+            colorX green = LERP_MIN_COLOR.Value;
+            colorX yellow = LERP_MID_COLOR.Value;
+            colorX red = LERP_MAX_COLOR.Value;
             ColorProfile profile = GetMostCommonProfile(green.Profile, yellow.Profile, red.Profile);
 
             float t = (float)slotCount / maxSlotCount;
 
             return t <= 0.5f
-                ? Lerp(green, yellow, t * 2, profile)
-                : Lerp(yellow, red, (t - 0.5f) * 2, profile);
+                    ? Lerp(green, yellow, t * 2, profile)
+                    : Lerp(yellow, red, (t - 0.5f) * 2, profile);
         }
 
         private static ColorProfile GetMostCommonProfile(ColorProfile a, ColorProfile b, ColorProfile c)
         {
             ColorProfile[] profiles = { a, b, c };
-            
+
             return profiles.GroupBy(p => p)
-                .OrderByDescending(g => g.Count())
-                .First()
-                .Key;
+                           .OrderByDescending(g => g.Count())
+                           .First()
+                           .Key;
         }
     }
 }
