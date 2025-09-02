@@ -14,7 +14,7 @@ namespace ResoniteSlotInspectorCounter
     {
         public override string Name => "ResoniteSlotInspectorCounter";
         public override string Author => "NepuShiro, xLinka";
-        public override string Version => "1.8.1";
+        public override string Version => "1.9.0";
         public override string Link => "https://github.com/NepuShiro/ResoniteSlotInspectorCounter";
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Should the mod be enabled", () => true);
