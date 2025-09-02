@@ -14,7 +14,7 @@ namespace ResoniteSlotInspectorCounter
     {
         public override string Name => "ResoniteSlotInspectorCounter";
         public override string Author => "NepuShiro, xLinka";
-        public override string Version => "1.8.0";
+        public override string Version => "1.8.1";
         public override string Link => "https://github.com/NepuShiro/ResoniteSlotInspectorCounter";
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Should the mod be enabled", () => true);
@@ -58,7 +58,7 @@ namespace ResoniteSlotInspectorCounter
             {
                 try
                 {
-                    if (!ENABLED.Value || __instance == null) return;
+                    if (!_config.GetValue(ENABLED) || __instance == null) return;
 
                     SceneInspector inspector = __instance.Slot.GetComponentInParents<SceneInspector>();
                     if (inspector == null) return;
@@ -71,21 +71,21 @@ namespace ResoniteSlotInspectorCounter
 
                     int totalChildCount = CountSlots(rootSlot);
 
-                    string closedColor = $"<color={CLOSED_COLOR.Value.ToHexString()}>{totalChildCount}</color>";
-                    string openedColor = $"<color={OPENED_COLOR.Value.ToHexString()}>{totalChildCount}</color>";
-                    string emptyColor = $"<color={EMPTY_COLOR.Value.ToHexString()}>{totalChildCount}</color>";
+                    string closedColor = $"<color={_config.GetValue(CLOSED_COLOR).ToHexString()}>{totalChildCount}</color>";
+                    string openedColor = $"<color={_config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
+                    string emptyColor = $"<color={_config.GetValue(EMPTY_COLOR).ToHexString()}>{totalChildCount}</color>";
 
                     Slot inspectorRoot = inspector.Root.Target;
-                    if (LERP_COLOR.Value)
+                    if (_config.GetValue(LERP_COLOR))
                     {
-                        colorX baseColor = GetColorBasedOnSlotCount(totalChildCount, LERP_COLOR_INSPECTROOTSLOT.Value ? CountSlots(inspectorRoot) : LERP_COLOR_ROOTSLOT.Value ? CountSlots(__instance.World.RootSlot) : LERP_COLOR_MAX.Value);
+                        colorX baseColor = GetColorBasedOnSlotCount(totalChildCount, _config.GetValue(LERP_COLOR_INSPECTROOTSLOT) ? CountSlots(inspectorRoot) : _config.GetValue(LERP_COLOR_ROOTSLOT) ? CountSlots(__instance.World.RootSlot) : _config.GetValue(LERP_COLOR_MAX));
 
                         closedColor = $"<color={baseColor.ToHexString()}>{totalChildCount}</color>";
                         openedColor = $"<color={baseColor.MulValue(0.7f).ToHexString()}>{totalChildCount}</color>";
                         emptyColor = $"<color={baseColor.MulValue(0.85f).ToHexString()}>{totalChildCount}</color>";
                     }
 
-                    if (DYNVARS.Value)
+                    if (_config.GetValue(DYNVARS))
                     {
                         DynamicVariableSpace dynVarSpace = inspector.Slot.GetComponentOrAttach<DynamicVariableSpace>();
                         string dynVarSpaceName = dynVarSpace.SpaceName.Value;
@@ -173,9 +173,9 @@ namespace ResoniteSlotInspectorCounter
 
         private static colorX GetColorBasedOnSlotCount(int slotCount, int maxSlotCount)
         {
-            colorX green = LERP_MIN_COLOR.Value;
-            colorX yellow = LERP_MID_COLOR.Value;
-            colorX red = LERP_MAX_COLOR.Value;
+            colorX green = _config.GetValue(LERP_MIN_COLOR);
+            colorX yellow = _config.GetValue(LERP_MID_COLOR);
+            colorX red = _config.GetValue(LERP_MAX_COLOR);
             ColorProfile profile = GetMostCommonProfile(green.Profile, yellow.Profile, red.Profile);
 
             float t = (float)slotCount / maxSlotCount;
