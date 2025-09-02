@@ -19,6 +19,9 @@ namespace ResoniteSlotInspectorCounter
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Should the mod be enabled", () => true);
         
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> RunInUpdates = new ModConfigurationKey<bool>("RunInUpdates", "RunInUpdates? Enable this if you're having issues with things applying.", () => false);
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<int> RunInUpdatesAmount = new ModConfigurationKey<int>("RunInUpdatesAmount", "Amount of updates to wait.", () => 1);
+
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> DYNVARS = new ModConfigurationKey<bool>("dynvars", "Create DynVars for the Inspector Root Slot Count?", () => true);
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<dummy> DUMMY0 = new ModConfigurationKey<dummy>("-- Non Lerped Colors --", "-- Non Lerped Colors --");
@@ -58,93 +61,103 @@ namespace ResoniteSlotInspectorCounter
             {
                 try
                 {
-                    if (!_config.GetValue(ENABLED) || __instance == null) return;
+                    if (!_config.GetValue(ENABLED)) return;
 
-                    SceneInspector inspector = __instance.Slot.GetComponentInParents<SceneInspector>();
-                    if (inspector == null) return;
-
-                    User userByAllocationID = inspector.Slot.World.GetUserByAllocationID(inspector.Slot.ReferenceID.User);
+                    SceneInspector inspector = __instance?.Slot.GetComponentInParents<SceneInspector>();
+                    User userByAllocationID = inspector?.Slot.World.GetUserByAllocationID(inspector.Slot.ReferenceID.User);
                     if (userByAllocationID == null || userByAllocationID != inspector.Slot.LocalUser) return;
 
-                    Slot rootSlot = ____rootSlot.Target;
-                    if (rootSlot == null) return;
-
-                    int totalChildCount = CountSlots(rootSlot);
-
-                    string closedColor = $"<color={_config.GetValue(CLOSED_COLOR).ToHexString()}>{totalChildCount}</color>";
-                    string openedColor = $"<color={_config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
-                    string emptyColor = $"<color={_config.GetValue(EMPTY_COLOR).ToHexString()}>{totalChildCount}</color>";
-
-                    Slot inspectorRoot = inspector.Root.Target;
-                    if (_config.GetValue(LERP_COLOR))
+                    if (_config.GetValue(RunInUpdates))
                     {
-                        colorX baseColor = GetColorBasedOnSlotCount(totalChildCount, _config.GetValue(LERP_COLOR_INSPECTROOTSLOT) ? CountSlots(inspectorRoot) : _config.GetValue(LERP_COLOR_ROOTSLOT) ? CountSlots(__instance.World.RootSlot) : _config.GetValue(LERP_COLOR_MAX));
-
-                        closedColor = $"<color={baseColor.ToHexString()}>{totalChildCount}</color>";
-                        openedColor = $"<color={baseColor.MulValue(0.7f).ToHexString()}>{totalChildCount}</color>";
-                        emptyColor = $"<color={baseColor.MulValue(0.85f).ToHexString()}>{totalChildCount}</color>";
-                    }
-
-                    if (_config.GetValue(DYNVARS))
-                    {
-                        DynamicVariableSpace dynVarSpace = inspector.Slot.GetComponentOrAttach<DynamicVariableSpace>();
-                        string dynVarSpaceName = dynVarSpace.SpaceName.Value;
-                        if (string.IsNullOrEmpty(dynVarSpaceName))
-                        {
-                            dynVarSpace.SpaceName.Value = "Inspector";
-                            dynVarSpace.Persistent = false;
-                        }
-
-                        if (inspectorRoot != null && rootSlot == inspectorRoot)
-                        {
-                            __instance.Slot.RunInUpdates(2, () =>
-                            {
-                                Slot slotvars = inspector.Slot.FindChildOrAdd("Slot Count Vars", false);
-
-                                DynamicValueVariable<string> dynVarString = slotvars.GetComponentOrAttach<DynamicValueVariable<string>>();
-                                string dynVarStringName = $"{dynVarSpaceName}/SlotCountString";
-                                if (string.IsNullOrEmpty(dynVarString.VariableName.Value))
-                                {
-                                    dynVarString.Persistent = false;
-                                    dynVarString.VariableName.Value = dynVarStringName;
-                                    dynVarString.Value.Value = openedColor;
-                                }
-
-                                DynamicValueVariable<int> dynVarInt = slotvars.GetComponentOrAttach<DynamicValueVariable<int>>();
-                                string dynVarIntName = $"{dynVarSpaceName}/SlotCountInt";
-                                if (string.IsNullOrEmpty(dynVarInt.VariableName.Value))
-                                {
-                                    dynVarInt.Persistent = false;
-                                    dynVarInt.VariableName.Value = dynVarIntName;
-                                    dynVarInt.Value.Value = totalChildCount;
-                                }
-
-                                inspector.Slot.WriteDynamicVariable(dynVarStringName, openedColor);
-                                inspector.Slot.WriteDynamicVariable(dynVarIntName, totalChildCount);
-                            });
-                        }
-                    }
-
-                    TextExpandIndicator expanderIndicator = ____expanderIndicator.Target;
-                    if (expanderIndicator == null) return;
-
-                    expanderIndicator.Closed.Value = closedColor;
-                    expanderIndicator.Opened.Value = openedColor;
-
-                    ValueObjectInput<string> empty = expanderIndicator.Slot.GetComponent<ValueObjectInput<string>>();
-                    if (empty != null || expanderIndicator.Empty.IsLinked)
-                    {
-                        empty.Value.Value = emptyColor;
+                        __instance.Slot.RunInUpdates(_config.GetValue(RunInUpdatesAmount), () => ExpanderReplacer(__instance, inspector, ____rootSlot, ____expanderIndicator));
                     }
                     else
                     {
-                        expanderIndicator.Empty.Value = emptyColor;
+                        ExpanderReplacer(__instance, inspector, ____rootSlot, ____expanderIndicator);
                     }
                 }
                 catch (Exception e)
                 {
                     Error($"Error in SlotInspector Postfix: {e}");
                 }
+            }
+        }
+
+        private static void ExpanderReplacer(SlotInspector instance, SceneInspector inspector, SyncRef<Slot> _rootSlot, SyncRef<TextExpandIndicator> _expanderIndicator)
+        {
+            Slot rootSlot = _rootSlot.Target;
+            if (rootSlot == null) return;
+
+            int totalChildCount = CountSlots(rootSlot);
+
+            string closedColor = $"<color={_config.GetValue(CLOSED_COLOR).ToHexString()}>{totalChildCount}</color>";
+            string openedColor = $"<color={_config.GetValue(OPENED_COLOR).ToHexString()}>{totalChildCount}</color>";
+            string emptyColor = $"<color={_config.GetValue(EMPTY_COLOR).ToHexString()}>{totalChildCount}</color>";
+
+            Slot inspectorRoot = inspector.Root.Target;
+            if (_config.GetValue(LERP_COLOR))
+            {
+                colorX baseColor = GetColorBasedOnSlotCount(totalChildCount, _config.GetValue(LERP_COLOR_INSPECTROOTSLOT) ? CountSlots(inspectorRoot) : _config.GetValue(LERP_COLOR_ROOTSLOT) ? CountSlots(instance.World.RootSlot) : _config.GetValue(LERP_COLOR_MAX));
+
+                closedColor = $"<color={baseColor.ToHexString()}>{totalChildCount}</color>";
+                openedColor = $"<color={baseColor.MulValue(0.7f).ToHexString()}>{totalChildCount}</color>";
+                emptyColor = $"<color={baseColor.MulValue(0.85f).ToHexString()}>{totalChildCount}</color>";
+            }
+
+            if (_config.GetValue(DYNVARS))
+            {
+                DynamicVariableSpace dynVarSpace = inspector.Slot.GetComponentOrAttach<DynamicVariableSpace>();
+                string dynVarSpaceName = dynVarSpace.SpaceName.Value;
+                if (string.IsNullOrEmpty(dynVarSpaceName))
+                {
+                    dynVarSpace.SpaceName.Value = "Inspector";
+                    dynVarSpace.Persistent = false;
+                }
+
+                if (inspectorRoot != null && rootSlot == inspectorRoot)
+                {
+                    instance.Slot.RunInUpdates(2, () =>
+                    {
+                        Slot slotvars = inspector.Slot.FindChildOrAdd("Slot Count Vars", false);
+
+                        DynamicValueVariable<string> dynVarString = slotvars.GetComponentOrAttach<DynamicValueVariable<string>>();
+                        string dynVarStringName = $"{dynVarSpaceName}/SlotCountString";
+                        if (string.IsNullOrEmpty(dynVarString.VariableName.Value))
+                        {
+                            dynVarString.Persistent = false;
+                            dynVarString.VariableName.Value = dynVarStringName;
+                            dynVarString.Value.Value = openedColor;
+                        }
+
+                        DynamicValueVariable<int> dynVarInt = slotvars.GetComponentOrAttach<DynamicValueVariable<int>>();
+                        string dynVarIntName = $"{dynVarSpaceName}/SlotCountInt";
+                        if (string.IsNullOrEmpty(dynVarInt.VariableName.Value))
+                        {
+                            dynVarInt.Persistent = false;
+                            dynVarInt.VariableName.Value = dynVarIntName;
+                            dynVarInt.Value.Value = totalChildCount;
+                        }
+
+                        inspector.Slot.WriteDynamicVariable(dynVarStringName, openedColor);
+                        inspector.Slot.WriteDynamicVariable(dynVarIntName, totalChildCount);
+                    });
+                }
+            }
+
+            TextExpandIndicator expanderIndicator = _expanderIndicator.Target;
+            if (expanderIndicator == null) return;
+
+            expanderIndicator.Closed.Value = closedColor;
+            expanderIndicator.Opened.Value = openedColor;
+
+            ValueObjectInput<string> empty = expanderIndicator.Slot.GetComponent<ValueObjectInput<string>>();
+            if (empty != null || expanderIndicator.Empty.IsLinked)
+            {
+                empty.Value.Value = emptyColor;
+            }
+            else
+            {
+                expanderIndicator.Empty.Value = emptyColor;
             }
         }
 
