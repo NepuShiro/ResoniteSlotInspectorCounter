@@ -12,9 +12,10 @@ namespace ResoniteSlotInspectorCounter
 {
     public class ResoniteSlotInspectorCounter : ResoniteMod
     {
+        internal const string VERSION_CONSTANT = "1.9.1";
         public override string Name => "ResoniteSlotInspectorCounter";
         public override string Author => "NepuShiro, xLinka";
-        public override string Version => "1.9.0";
+        public override string Version => VERSION_CONSTANT;
         public override string Link => "https://github.com/NepuShiro/ResoniteSlotInspectorCounter";
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> ENABLED = new ModConfigurationKey<bool>("Enabled", "Should the mod be enabled", () => true);
@@ -63,9 +64,13 @@ namespace ResoniteSlotInspectorCounter
                 {
                     if (!_config.GetValue(ENABLED)) return;
 
-                    SceneInspector inspector = __instance?.Slot.GetComponentInParents<SceneInspector>();
-                    User userByAllocationID = inspector?.Slot.World.GetUserByAllocationID(inspector.Slot.ReferenceID.User);
-                    if (userByAllocationID == null || userByAllocationID != inspector.Slot.LocalUser) return;
+                    SceneInspector inspector = __instance?.Slot?.GetComponentInParents<SceneInspector>();
+                    Slot insSlot = inspector?.Slot;
+                    if (insSlot == null) return;
+        
+                    insSlot.ReferenceID.ExtractIDs(out ulong position, out byte allocationId);
+                    User user = insSlot.World.GetUserByAllocationID(allocationId);
+                    if (user == null || position < user.AllocationIDStart || !user.IsLocalUser && user != insSlot.World.LocalUser) return;
 
                     if (_config.GetValue(RunInUpdates))
                     {
