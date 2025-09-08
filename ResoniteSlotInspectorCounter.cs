@@ -162,37 +162,29 @@ namespace ResoniteSlotInspectorCounter
                     newExpander = expanderIndicator.Slot.Duplicate();
                     newExpander.Name = "RSIC - Button";
                 }
+
                 newExpander.OrderOffset = -1;
-                TextExpandIndicator newExpanderIndicator = newExpander.GetComponent<TextExpandIndicator>();
-                if (newExpanderIndicator == null) return;
 
-                newExpanderIndicator.Closed.Value = closedColor;
-                newExpanderIndicator.Opened.Value = openedColor;
+                TextExpandIndicator fallbackIndicator = expanderIndicator;
+                expanderIndicator = newExpander.GetComponent<TextExpandIndicator>();
+                if (expanderIndicator == null)
+                {
+                    newExpander.Destroy();
+                    expanderIndicator = fallbackIndicator;
+                }
+            }
 
-                ValueObjectInput<string> empty = newExpanderIndicator.Slot.GetComponent<ValueObjectInput<string>>();
-                if (empty != null || newExpanderIndicator.Empty.IsLinked)
-                {
-                    empty.Value.Value = emptyColor;
-                }
-                else
-                {
-                    newExpanderIndicator.Empty.Value = emptyColor;
-                }
+            expanderIndicator.Closed.Value = closedColor;
+            expanderIndicator.Opened.Value = openedColor;
+
+            ValueObjectInput<string> empty = expanderIndicator.Slot.GetComponent<ValueObjectInput<string>>();
+            if (empty != null || expanderIndicator.Empty.IsLinked)
+            {
+                empty.Value.Value = emptyColor;
             }
             else
             {
-                expanderIndicator.Closed.Value = closedColor;
-                expanderIndicator.Opened.Value = openedColor;
-
-                ValueObjectInput<string> empty = expanderIndicator.Slot.GetComponent<ValueObjectInput<string>>();
-                if (empty != null || expanderIndicator.Empty.IsLinked)
-                {
-                    empty.Value.Value = emptyColor;
-                }
-                else
-                {
-                    expanderIndicator.Empty.Value = emptyColor;
-                }
+                expanderIndicator.Empty.Value = emptyColor;
             }
         }
 
