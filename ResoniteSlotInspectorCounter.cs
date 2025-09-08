@@ -12,9 +12,9 @@ namespace ResoniteSlotInspectorCounter
 {
     public class ResoniteSlotInspectorCounter : ResoniteMod
     {
-        internal const string VERSION_CONSTANT = "1.9.1";
+        internal const string VERSION_CONSTANT = "1.9.2";
         public override string Name => "ResoniteSlotInspectorCounter";
-        public override string Author => "NepuShiro, xLinka";
+        public override string Author => "NepuShiro, LeCloutPanda, xLinka";
         public override string Version => VERSION_CONSTANT;
         public override string Link => "https://github.com/NepuShiro/ResoniteSlotInspectorCounter";
 
@@ -24,6 +24,7 @@ namespace ResoniteSlotInspectorCounter
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<int> RunInUpdatesAmount = new ModConfigurationKey<int>("RunInUpdatesAmount", "Amount of updates to wait.", () => 1);
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> DYNVARS = new ModConfigurationKey<bool>("dynvars", "Create DynVars for the Inspector Root Slot Count?", () => true);
+        [AutoRegisterConfigKey] private static readonly ModConfigurationKey<bool> REPLACE_VANILLA_BUTTON = new ModConfigurationKey<bool>("Replace Vanilla Dropdown", "Should the mod replace the vanilla dropdown or create a new button", () => true);
 
         [AutoRegisterConfigKey] private static readonly ModConfigurationKey<dummy> DUMMY0 = new ModConfigurationKey<dummy>("-- Non Lerped Colors --", "-- Non Lerped Colors --");
 
@@ -100,6 +101,7 @@ namespace ResoniteSlotInspectorCounter
             string emptyColor = $"<color={_config.GetValue(EMPTY_COLOR).ToHexString()}>{totalChildCount}</color>";
 
             Slot inspectorRoot = inspector.Root.Target;
+            
             if (_config.GetValue(LERP_COLOR))
             {
                 colorX baseColor = GetColorBasedOnSlotCount(totalChildCount, _config.GetValue(LERP_COLOR_INSPECTROOTSLOT) ? CountSlots(inspectorRoot) : _config.GetValue(LERP_COLOR_ROOTSLOT) ? CountSlots(instance.World.RootSlot) : _config.GetValue(LERP_COLOR_MAX));
@@ -151,6 +153,26 @@ namespace ResoniteSlotInspectorCounter
 
             TextExpandIndicator expanderIndicator = _expanderIndicator.Target;
             if (expanderIndicator == null) return;
+
+            if (_config.GetValue(REPLACE_VANILLA_BUTTON))
+            {
+                Slot newExpander = expanderIndicator.Slot.Parent.FindChild("RSIC - Button");
+                if (newExpander == null)
+                {
+                    newExpander = expanderIndicator.Slot.Duplicate();
+                    newExpander.Name = "RSIC - Button";
+                }
+
+                newExpander.OrderOffset = -1;
+
+                TextExpandIndicator fallbackIndicator = expanderIndicator;
+                expanderIndicator = newExpander.GetComponent<TextExpandIndicator>();
+                if (expanderIndicator == null)
+                {
+                    newExpander.Destroy();
+                    expanderIndicator = fallbackIndicator;
+                }
+            }
 
             expanderIndicator.Closed.Value = closedColor;
             expanderIndicator.Opened.Value = openedColor;
