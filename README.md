@@ -19,6 +19,13 @@ A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoade
       </a>
     </td>
     <td align="center">
+      <a href="https://github.com/LeCloutPanda">
+        <img src="https://avatars.githubusercontent.com/u/53411604?v=4" width="100px;" alt="LeCloutPanda"/>
+        <br />
+        <sub><b>LeCloutPanda</b></sub>
+      </a>
+    </td>
+    <td align="center">
       <a href="https://github.com/Xlinka">
         <img src="https://avatars.githubusercontent.com/u/22996716?v=4" width="100px;" alt="Xlinka"/>
         <br />
